@@ -1,0 +1,20 @@
+# API Keys (never commit these!)
+*.key
+.env
+config.js
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Docker
+.dockerignore

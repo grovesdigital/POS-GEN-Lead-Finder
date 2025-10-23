@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  google-places-tool:
+    build: .
+    container_name: google-places-tool
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    labels:
+      - "description=Internal Google Places Query Tool"
+
+# To run with custom port, use:
+# docker-compose up -d
+#
+# To access: http://your-vps-ip:8080
+#
+# To change port, edit the ports mapping above (e.g., "3000:80" for port 3000)

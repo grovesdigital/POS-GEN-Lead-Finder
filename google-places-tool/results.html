@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results - Google Places Query Tool</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Google Places Query Results</h1>
+            <a href="index.html" class="btn btn-secondary">← New Search</a>
+        </header>
+
+        <div id="searchInfo" class="search-info"></div>
+
+        <div id="loadingMessage" class="loading-message">
+            <div class="spinner"></div>
+            <p>Loading results from Google Places API...</p>
+        </div>
+
+        <div id="errorContainer" class="error-message" style="display: none;"></div>
+
+        <div id="resultsContainer" style="display: none;">
+            <div class="results-header">
+                <div class="results-count">
+                    <h2>Results: <span id="resultCount">0</span></h2>
+                </div>
+                <div class="results-actions">
+                    <button id="loadMoreBtn" class="btn btn-secondary" style="display: none;">Load More Results</button>
+                    <button id="exportJsonBtn" class="btn btn-primary">Export as JSON</button>
+                    <button id="exportCsvBtn" class="btn btn-primary">Export as CSV</button>
+                </div>
+            </div>
+
+            <div class="view-toggle">
+                <button id="tableViewBtn" class="btn btn-view active">Table View</button>
+                <button id="cardViewBtn" class="btn btn-view">Card View</button>
+            </div>
+
+            <!-- Table View -->
+            <div id="tableView" class="table-container">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Address</th>
+                            <th>Rating</th>
+                            <th>Reviews</th>
+                            <th>Status</th>
+                            <th>Open Now</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Results will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Card View -->
+            <div id="cardView" class="card-container" style="display: none;">
+                <!-- Cards will be inserted here -->
+            </div>
+
+            <div id="attributions" class="attributions" style="display: none;">
+                <!-- Photo attributions will be displayed here -->
+            </div>
+        </div>
+
+        <footer>
+            <p>Internal Tool - Google Places Query | Compliant with Google Maps Platform TOS</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
