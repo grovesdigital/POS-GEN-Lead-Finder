@@ -5,7 +5,7 @@ services:
     build: .
     container_name: google-places-tool
     ports:
-      - "8080:80"
+      - "8880:80"
     restart: unless-stopped
     labels:
       - "description=Internal Google Places Query Tool"
