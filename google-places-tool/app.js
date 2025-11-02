@@ -2340,30 +2340,48 @@ async function generateCampaignAssets() {
             })
         };
 
-        // Inject LLM API key and endpoint into environment for backend
-        const llmApiKey = loadLLMApiKey();
-        const llmApiUrl = loadLLMApiUrl();
-        payload.llmApiKey = llmApiKey;
-        payload.llmApiUrl = llmApiUrl;
+        // Transform payload to match backend API contract
+        const aiPayload = {
+            campaign: {
+                campaign_id: Date.now().toString(),
+                campaign_name: payload.campaign.name || 'Unnamed Campaign'
+            },
+            locations: payload.businesses.map(business => ({
+                gmb_id: business.id,
+                name: business.name,
+                address: business.address,
+                phone: business.phone || '',
+                photos: business.photos.map(p => p.url)
+            })),
+            screenLocation: payload.campaign.storeLocation ? {
+                address: payload.campaign.storeLocation.address,
+                coordinates: payload.campaign.storeLocation.coordinates
+            } : null
+        };
 
-        // POST to backend for LLM asset generation
-        const response = await fetch('/api/generate-assets', {
+        // Detect if running in Codespaces and use appropriate backend URL
+        const backendUrl = window.location.hostname.includes('github.dev') 
+            ? window.location.origin.replace(/:\d+/, ':4000').replace('8080', '4000')
+            : 'http://localhost:4000';
+        
+        // POST to AI pipeline service for content generation
+        const response = await fetch(`${backendUrl}/generate-content`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(aiPayload)
         });
         if (!response.ok) {
-            throw new Error(`Backend error: ${response.status} ${response.statusText}`);
+            throw new Error(`AI Pipeline error: ${response.status} ${response.statusText}`);
         }
         const result = await response.json();
-        // result: { campaign, assets }
-        // Show generated assets in a new tab as HTML
-        const html = `<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><title>Generated Campaign Assets</title><style>body{font-family:Arial,sans-serif;margin:2em;} .asset{border:1px solid #ccc;margin-bottom:2em;padding:1em;} img{max-width:300px;display:block;margin-bottom:1em;} .field{margin-bottom:0.5em;}</style></head><body><h1>Campaign: ${result.campaign.campaign_name || result.campaign.name}</h1><h2>Assets</h2>${result.assets.map(asset => `<div class='asset'><h3>${asset.business_name}</h3><div class='field'><strong>Headline:</strong> ${asset.headline}</div><div class='field'><strong>Subline 1:</strong> ${asset.subline1}</div><div class='field'><strong>Subline 2:</strong> ${asset.subline2}</div><div class='field'><strong>CTA:</strong> ${asset.cta}</div><div class='field'><strong>Supporting:</strong> ${asset.supporting}</div><div class='field'><strong>Header Image:</strong><br>${asset.header_image ? `<img src='${asset.header_image}' alt='Header'>` : 'N/A'}</div><div class='field'><strong>Sub Image:</strong><br>${asset.sub_image ? `<img src='${asset.sub_image}' alt='Sub'>` : 'N/A'}</div><div class='field'><strong>Generated At:</strong> ${asset.generated_at}</div></div>`).join('')}</body></html>`;
+        // result: { campaign, content }
+        // Show generated content in a new tab for review
+        const html = `<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><title>Generated Campaign Content</title><style>body{font-family:Arial,sans-serif;margin:2em;} .content{border:1px solid #ccc;margin-bottom:2em;padding:1em;} img{max-width:300px;display:block;margin-bottom:1em;} .field{margin-bottom:0.5em;}</style></head><body><h1>Campaign: ${result.campaign.campaign_name || result.campaign.name}</h1><h2>Generated Content</h2>${result.content.map(item => `<div class='content'><h3>${item.business_name}</h3><div class='field'><strong>Headline:</strong> ${item.headline}</div><div class='field'><strong>Subline 1:</strong> ${item.subline1}</div><div class='field'><strong>Subline 2:</strong> ${item.subline2}</div><div class='field'><strong>CTA:</strong> ${item.cta}</div><div class='field'><strong>Supporting:</strong> ${item.supporting}</div><div class='field'><strong>Header Image:</strong><br>${item.header_image ? `<img src='${item.header_image}' alt='Header'>` : 'N/A'}</div><div class='field'><strong>Sub Image:</strong><br>${item.sub_image ? `<img src='${item.sub_image}' alt='Sub'>` : 'N/A'}</div><div class='field'><strong>Generated At:</strong> ${item.generated_at}</div></div>`).join('')}</body></html>`;
         const blob = new Blob([html], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
         window.open(url, '_blank');
 
-        showStatus('campaignAssetsStatus', `✓ Assets generated and displayed in new tab! (${result.assets.length} businesses)`);
+        showStatus('campaignAssetsStatus', `✓ Content generated and displayed in new tab! (${result.content.length} businesses)`);
 
         setTimeout(() => {
             if (generateBtn) {
@@ -2374,8 +2392,8 @@ async function generateCampaignAssets() {
             hideStatus('campaignAssetsStatus');
         }, 3000);
     } catch (error) {
-        console.error('Asset generation error:', error);
-        showError('campaignAssetsError', `Failed to generate assets: ${error.message}`);
+        console.error('Content generation error:', error);
+        showError('campaignAssetsError', `Failed to generate content: ${error.message}`);
         if (generateBtn) {
             delete generateBtn.dataset.processing;
             delete generateBtn.dataset.pendingLabel;
