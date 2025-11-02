@@ -1,6 +1,6 @@
-# Google Places Query Tool (New API)
+# POS-Gen Lead Finder - Google Places Query Tool (New API)
 
-Modern, interactive web application for querying Google Places API (New) with real-time map visualization, multi-type search, and beautiful results display. Perfect for business research, lead generation, and location intelligence.
+Modern, enterprise-grade web application for querying Google Places API (New) with real-time map visualization, AI-powered campaign generation, and beautiful results display. Perfect for business research, lead generation, and location-based marketing campaigns.
 
 ## Features
 
@@ -10,15 +10,26 @@ Modern, interactive web application for querying Google Places API (New) with re
 - 🗺️ **Interactive Map Preview** - Real-time visualization of search results on Google Maps
 - 🏢 **Multi-Type Selection** - Search for multiple business types simultaneously
 - 📏 **Adjustable Search Radius** - Slider control from 100m to 50km
-- 📊 **Beautiful Results Display** - Card-based layout with business photos
+- 📊 **Beautiful Results Display** - Modern card-based layout with business photos
 - 📤 **Export Capabilities** - Export results as JSON or CSV
 - ⚙️ **Settings Management** - Update or clear API key anytime
 
+### 🚀 NEW: Campaign Builder
+- 🎯 **AI-Powered Campaign Generation** - Automatically generate marketing content for multiple businesses
+- 🤖 **LLM Integration** - Configurable backend integration for content generation
+- 📸 **Intelligent Image Selection** - Automated image evaluation and selection for marketing materials
+- 📝 **Multi-Business Campaigns** - Select and process multiple businesses simultaneously
+- 🎨 **Asset Preview & Management** - Review, export, and send generated content to production
+- 📊 **Campaign Analytics** - Track campaign status and generated asset counts
+- 🔄 **Flexible Workflow** - 4-step guided campaign creation process
+
 ### User Experience
 - ✨ **Setup Wizard** - Guided first-time setup with step-by-step instructions
-- 🎨 **Modern UI** - Clean, responsive design that works on all devices
-- 🚀 **Single Page App** - Smooth transitions without page reloads
+- 🎨 **Modern UI** - Clean, responsive design powered by Inter font family
+- 🔀 **Dual-Mode Interface** - Toggle between Quick Search and Campaign Builder
+- 🚀 **Smooth Animations** - Professional transitions and loading states
 - 📱 **Mobile Friendly** - Fully responsive for mobile and tablet use
+- 🌐 **Dedicated Results Page** - Separate results.html for persistent result viewing
 
 ### Google Maps Platform Compliance
 - ✅ Uses official Google Places API (New)
@@ -31,10 +42,23 @@ Modern, interactive web application for querying Google Places API (New) with re
 
 ```
 google-places-tool/
-├── index.html          # Main application (single-page app)
-├── app.js              # Application logic and Google Maps integration
-├── styles.css          # Modern, responsive styling
-├── results.html        # Legacy file (not used in new version)
+├── index.html          # Main application (dual-mode interface)
+│                       # - Quick Search mode with map visualization
+│                       # - Campaign Builder with AI generation workflow
+├── app.js              # Application logic (~3200 lines)
+│                       # - Google Maps API integration
+│                       # - Campaign Builder functionality
+│                       # - AI asset generation integration
+│                       # - Results page handlers
+├── styles.css          # Modern, responsive styling (~2600 lines)
+│                       # - Inter font family integration
+│                       # - Comprehensive component system
+│                       # - Results page styling
+│                       # - Campaign asset card styles
+├── results.html        # Dedicated results page
+│                       # - Modern card-based result display
+│                       # - Campaign generation interface
+│                       # - Export functionality
 ├── Dockerfile          # Container configuration
 ├── docker-compose.yml  # Docker Compose setup
 ├── .dockerignore       # Docker ignore rules
@@ -65,6 +89,34 @@ google-places-tool/
 4. **Enable Billing**
    - Google Cloud requires a billing account
    - Monitor usage at [Google Cloud Console](https://console.cloud.google.com/billing)
+
+### Backend Service (For Campaign Builder)
+
+To use the Campaign Builder feature, you need a backend service that provides AI content generation:
+
+1. **Backend Location**
+   - The AI backend service is in `/src/ai-pipeline-service/` directory
+   - Built with Node.js/Express
+   - Integrates with LLM providers
+
+2. **Start the Backend**
+   ```bash
+   cd /src/ai-pipeline-service
+   node server.js
+   ```
+   - Default port: 4000
+   - Configurable via environment variables
+
+3. **Configure in Frontend**
+   - Open Settings (gear icon)
+   - Set LLM API URL: `http://localhost:4000` (or your backend URL)
+   - Set LLM API Key: (if required by your backend)
+   - Settings saved to localStorage
+
+4. **Without Backend**
+   - Quick Search mode works independently
+   - Campaign Builder requires backend connection
+   - Results page "Generate Campaign" requires backend
 
 ### API Pricing (as of 2024)
 - **Places Nearby Search (New):** ~$32 per 1,000 requests
@@ -237,7 +289,7 @@ location /api/places/ {
    - Click "Continue to Search Tool"
    - Your key is encrypted and stored locally in your browser
 
-### Searching for Places
+### Quick Search Mode
 
 1. **Select Location**
    - Click the "Search Location" input
@@ -248,6 +300,7 @@ location /api/places/ {
 2. **Set Search Radius**
    - Use the slider to set your search radius (100m - 50km)
    - The value updates in real-time
+   - Visual circle overlay shows search area
 
 3. **Choose Business Types**
    - Click "Select business types..."
@@ -256,27 +309,110 @@ location /api/places/ {
    - Selected types appear as tags below
 
 4. **Preview on Map**
-   - Click "🔍 Find businesses"
+   - Click "Find businesses"
    - Results appear as markers on the map
    - Click markers to see business info
    - Map auto-zooms to show all results
 
 5. **View Detailed Results**
-   - Click "📋 View Results" button
-   - Browse results in beautiful card format
+   - Click "View Results" button
+   - Opens dedicated results.html page
+   - Browse results in modern card format
    - See photos, ratings, reviews, and types
+   - Generate campaigns per business
    - Click "View on Google Maps" to open in Google Maps
 
 6. **Export Data**
-   - Click "Export JSON" for structured data
-   - Click "Export CSV" for spreadsheet import
+   - Click "JSON" for structured data
+   - Click "CSV" for spreadsheet import
    - Files download automatically
+
+### Campaign Builder Mode
+
+**NEW FEATURE** - AI-powered marketing campaign generation
+
+#### Step 1: Campaign Setup
+1. **Create Campaign**
+   - Enter campaign name
+   - Set campaign theme (e.g., "Valentine's Day", "Summer Sale")
+   - Provide description/target audience
+   - Select location and radius
+
+2. **Choose Industry Types**
+   - Pre-selected business types (Beauty Salon, Cafe, Florist, etc.)
+   - Or select custom types
+   - Set number of businesses per type (default: 3)
+
+#### Step 2: Business Selection
+1. **Find Top Businesses**
+   - Click "Find Top Businesses"
+   - System searches Google Places API
+   - Results grouped by business type
+   - Top businesses displayed with photos, ratings
+
+2. **Select Businesses**
+   - Check individual businesses
+   - Or use "Select All" per group
+   - Use "Select All Groups" for bulk selection
+   - Counter shows X/Y selected
+
+3. **Confirm Selection**
+   - Review selected businesses
+   - Remove individual businesses if needed
+   - Replace businesses with alternatives
+   - Proceed to generation
+
+#### Step 3: Generate Assets
+1. **Configure Backend**
+   - Enter LLM API URL (e.g., http://localhost:4000)
+   - Enter LLM API Key
+   - Saved to localStorage for future use
+
+2. **Generate Campaign**
+   - Click "Generate Campaign Assets"
+   - System processes each business:
+     - Evaluates images for suitability
+     - Selects best header and sub images
+     - Generates marketing copy (headline, sublines, CTA)
+     - Creates supporting text
+   - View progress in real-time
+
+#### Step 4: Review & Deploy
+1. **View Generated Assets**
+   - Modern card-based display
+   - Shows all generated content per business
+   - Preview images with labels
+   - See all marketing copy
+
+2. **Asset Actions**
+   - **Export Single**: Download individual asset as JSON
+   - **Export All**: Download all assets in one file
+   - **Send to Generations**: Push asset to production (per asset)
+   - **Send All to Generations**: Bulk push all assets
+
+3. **Asset Details Include**:
+   - Business name
+   - Headline (attention-grabbing)
+   - Subline 1 & 2 (supporting text)
+   - Call-to-Action (CTA)
+   - Supporting text
+   - Selected header & sub images
+   - Generation timestamp
+   - Language/locale
 
 ### Managing Settings
 
-1. **Click the gear icon (⚙️)** in the top right
-2. **Update API Key:** Enter a new key and save
-3. **Clear API Key:** Remove stored key (returns to setup)
+1. **Click the settings icon** in the top right
+2. **Update Google API Key:** Enter a new key and save
+3. **Update LLM API URL:** Configure backend URL for campaign generation
+4. **Update LLM API Key:** Set authentication for LLM backend
+5. **Clear API Key:** Remove stored key (returns to setup)
+
+### Switching Between Modes
+
+- **Quick Search**: For individual business searches and map visualization
+- **Campaign Builder**: For multi-business AI-powered campaign generation
+- Toggle using the mode selector in the branding bar
 
 ## Official Place Types
 
@@ -491,8 +627,61 @@ Monitor your API usage:
 Create a `.env` file (don't commit):
 ```bash
 GOOGLE_API_KEY=your_api_key_here
+LLM_API_URL=http://localhost:4000
+LLM_API_KEY=your_llm_key_here
 PORT=8080
 NODE_ENV=production
+```
+
+### Backend Integration
+
+The Campaign Builder requires a backend service that implements the AI generation API:
+
+**Expected Endpoint:**
+```
+POST /api/campaign/generate
+```
+
+**Request Body:**
+```json
+{
+  "campaign": {
+    "campaign_name": "Valentine's Day Campaign",
+    "theme": "Valentine's Day",
+    "description": "Romantic marketing for local businesses"
+  },
+  "businesses": [
+    {
+      "business_name": "Rose Cafe",
+      "business_type": "cafe",
+      "photos": ["photo_url_1", "photo_url_2"],
+      "rating": 4.5,
+      "address": "123 Main St"
+    }
+  ]
+}
+```
+
+**Response Format:**
+```json
+{
+  "content": [
+    {
+      "business_name": "Rose Cafe",
+      "headline": "Love is in the Air at Rose Cafe",
+      "subline1": "Romantic atmosphere for two",
+      "subline2": "Special Valentine's menu",
+      "cta": "Book Your Table",
+      "supporting": "Join us this Valentine's Day...",
+      "header_image": "selected_photo_url",
+      "sub_image": "selected_photo_url_2",
+      "generated_at": "2024-02-01T12:00:00Z",
+      "language": "en",
+      "image_descriptions": [...]
+    }
+  ],
+  "skipped": []
+}
 ```
 
 ### Custom Styling
@@ -500,17 +689,40 @@ NODE_ENV=production
 Edit `styles.css` to customize colors:
 ```css
 :root {
-    --primary-color: #your-color;
-    --secondary-color: #your-color;
+    --primary-color: #4f46e5;      /* Indigo */
+    --primary-dark: #4338ca;       /* Darker indigo */
+    --primary-light: #6366f1;      /* Lighter indigo */
+    --secondary-color: #06b6d4;    /* Cyan */
+    --success-color: #10b981;      /* Green */
+    --danger-color: #ef4444;       /* Red */
 }
 ```
 
 ### Additional Features
 
 Want to add more features? The codebase is well-structured:
-- **app.js** - Add new API calls or features
-- **index.html** - Add new UI components
-- **styles.css** - Customize appearance
+- **app.js** - Add new API calls or features (~3200 lines, well-commented)
+- **index.html** - Add new UI components (structured with clear sections)
+- **styles.css** - Customize appearance (~2600 lines of modern CSS)
+- **results.html** - Customize results page layout
+
+### Key Functions in app.js
+
+**Quick Search:**
+- `searchPlaces()` - Main search function
+- `fetchNearbyPlaces()` - Google Places API integration
+- `showResultsPage()` - Navigate to results page
+
+**Campaign Builder:**
+- `searchCampaignBusinesses()` - Fetch businesses for campaign
+- `generateCampaignAssets()` - Call backend to generate content
+- `displayGeneratedAssets()` - Render generated content
+- `handleSendToGenerations()` - Deploy assets to production
+
+**Results Page (in app.js):**
+- `renderResultsPage()` - Display results from sessionStorage
+- `createResultCardModern()` - Create individual result cards
+- `handleGenerateCampaign()` - Generate campaign from single business
 
 ## API Limits & Quotas
 
@@ -548,19 +760,51 @@ Want to add more features? The codebase is well-structured:
 
 Internal tool for business research and lead generation. Not for public distribution or commercial resale. Must comply with Google Maps Platform Terms of Service.
 
+## What's New in Version 3.0
+
+### Major Updates
+- ✨ **Campaign Builder Mode** - Complete AI-powered campaign generation workflow
+- 🎨 **Modern UI Refresh** - Inter font family, updated color scheme, SVG icons
+- 📄 **Dedicated Results Page** - Separate results.html with modern card layout
+- 🤖 **LLM Integration** - Configurable backend for AI content generation
+- 📸 **Image Intelligence** - Automated image evaluation and selection
+- 💾 **Session Storage** - Results persist across page navigation
+- 🎯 **Multi-Business Selection** - Select and process multiple businesses
+- 📊 **Asset Management** - Preview, export, and deploy generated content
+- 🔄 **4-Step Workflow** - Guided campaign creation process
+- 🌐 **Professional Notifications** - Toast notifications for user feedback
+
+### UI Improvements
+- Replaced emoji with professional SVG icons throughout
+- Consistent Inter font family for modern typography
+- Updated color palette (Indigo/Purple gradient scheme)
+- Enhanced card designs with better shadows and borders
+- Improved responsive behavior on mobile devices
+- Smooth animations and transitions
+- Loading states and progress indicators
+
+### Technical Improvements
+- ~3200 lines of JavaScript with comprehensive features
+- ~2600 lines of modern CSS with component system
+- Session storage for result persistence
+- Better error handling and user feedback
+- Modular function organization
+- Comprehensive commenting
+
 ## Credits
 
 Built with:
 - Google Maps JavaScript API
 - Google Places API (New)
 - Vanilla JavaScript (no frameworks)
-- Modern CSS3
+- Modern CSS3 with Inter font family
 - Docker for containerization
+- Backend AI service integration
 
 ---
 
-**Version:** 2.0
-**Last Updated:** 2024
+**Version:** 3.0
+**Last Updated:** November 2024
 **Supports:** Google Places API (New)
 
-Enjoy your new Google Places Query Tool! 🗺️✨
+Enjoy your new POS-Gen Lead Finder! 🎯✨

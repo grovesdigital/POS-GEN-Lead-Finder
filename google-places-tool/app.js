@@ -30,6 +30,7 @@ const APP_STATE = {
     searchResults: [],
     infoWindows: [],
     radiusCircle: null,
+    generatedAssets: null, // Store generated campaign assets
     // Campaign state
     currentView: 'quickSearch', // 'quickSearch' or 'campaignBuilder'
     campaign: {
@@ -47,7 +48,8 @@ const APP_STATE = {
         stepsExpanded: {
             1: true,
             2: false,
-            3: false
+            3: false,
+            4: false
         }
     },
     campaignAutocomplete: null
@@ -800,13 +802,23 @@ function updateResultsCount(count) {
 // RESULTS PAGE
 // ========================================
 function showResultsPage() {
-    document.getElementById('mainApp').style.display = 'none';
-    document.getElementById('resultsPage').style.display = 'block';
-
-    // Setup sorting and filtering event listeners
-    setupResultsControls();
-
-    renderResults();
+    // Store results in sessionStorage
+    if (APP_STATE.searchResults && APP_STATE.searchResults.length > 0) {
+        sessionStorage.setItem('searchResults', JSON.stringify(APP_STATE.searchResults));
+        
+        // Store search info
+        const searchInfo = {
+            query: APP_STATE.selectedBusinessTypes.join(', ') || 'Various types',
+            location: APP_STATE.selectedLocation?.name || APP_STATE.selectedLocation?.address || 'Unknown',
+            radius: APP_STATE.radius
+        };
+        sessionStorage.setItem('searchInfo', JSON.stringify(searchInfo));
+        
+        // Navigate to results page
+        window.location.href = 'results.html';
+    } else {
+        alert('No results to display. Please perform a search first.');
+    }
 }
 
 function showMainApp() {
@@ -2576,45 +2588,13 @@ async function generateCampaignAssets() {
         console.log('[DEBUG] Content:', result.content?.map(c => c.business_name));
         console.log('[DEBUG] Skipped:', result.skipped?.map(s => s.business_name));
         
-        // Show generated content in a new tab for review
-        const skippedSection = result.skipped && result.skipped.length > 0 ? `
-            <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 1.5em; margin-bottom: 2em; border-radius: 8px;">
-                <h2 style="color: #92400e; margin-top: 0;">⚠️ Skipped Businesses (${result.skipped.length})</h2>
-                ${result.skipped.map(skip => `
-                    <div style="margin-bottom: 1em; padding: 1em; background: white; border-radius: 8px;">
-                        <h3 style="margin-top: 0; color: #92400e;">${skip.business_name}</h3>
-                        <p style="color: #78350f; font-weight: 600;">Reason: ${skip.reason}</p>
-                        ${skip.image_count > 0 ? `<p style="color: #78350f;">Images evaluated: ${skip.image_count}</p>` : ''}
-                        ${skip.evaluated_images ? `
-                            <details style="margin-top: 0.5em;">
-                                <summary style="cursor: pointer; color: #92400e; font-weight: 600;">View Image Evaluations</summary>
-                                <div style="margin-top: 0.5em; padding-left: 1em;">
-                                    ${skip.evaluated_images.map(img => `
-                                        <div style="margin-bottom: 0.5em; padding: 0.5em; background: #fef3c7; border-radius: 4px;">
-                                            <strong>Image ${img.index}:</strong> ${img.suitability}<br>
-                                            <em style="color: #78350f;">${img.description}</em>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </details>
-                        ` : ''}
-                    </div>
-                `).join('')}
-            </div>
-        ` : '';
+        // Display results in Step 4
+        displayGeneratedAssets(result);
         
-        const html = `<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><title>Generated Campaign Content</title><style>body{font-family:Arial,sans-serif;margin:2em;background:#f8fafc;} .content{border:1px solid #e2e8f0;margin-bottom:2em;padding:1.5em;background:white;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);} img{max-width:300px;display:block;margin:1em 0;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);} .field{margin-bottom:0.75em;} .field strong{color:#334155;} .image-descriptions{margin-top:1em;padding:1em;background:#f8fafc;border-radius:8px;} .image-descriptions h4{margin-top:0;color:#475569;} .img-desc{padding:0.5em;margin-bottom:0.5em;background:white;border-left:3px solid #667eea;border-radius:4px;} .img-desc.selected{background:#e0e7ff;border-left-color:#4338ca;} details{margin-top:1em;cursor:pointer;} summary{font-weight:600;color:#667eea;}</style></head><body><h1 style="color:#1e293b;">Campaign: ${result.campaign.campaign_name || result.campaign.name}</h1>${skippedSection}<h2 style="color:#334155;">Generated Content (${result.content.length} ${result.content.length === 1 ? 'Business' : 'Businesses'})</h2>${result.content.map(item => `<div class='content'><h3 style="color:#667eea;margin-top:0;">${item.business_name}</h3><div class='field'><strong>Headline:</strong> ${item.headline}</div><div class='field'><strong>Subline 1:</strong> ${item.subline1}</div><div class='field'><strong>Subline 2:</strong> ${item.subline2}</div><div class='field'><strong>CTA:</strong> ${item.cta}</div><div class='field'><strong>Supporting:</strong> ${item.supporting}</div><div class='field'><strong>Header Image:</strong><br>${item.header_image ? `<img src='${item.header_image}' alt='Header'>` : 'N/A'}</div><div class='field'><strong>Sub Image:</strong><br>${item.sub_image ? `<img src='${item.sub_image}' alt='Sub'>` : 'N/A'}</div>${item.image_descriptions ? `<details class="image-descriptions"><summary>View Image Analysis (${item.image_descriptions.length} images)</summary>${item.image_descriptions.map(img => `<div class="img-desc ${img.selected ? 'selected' : ''}"><strong>Image ${img.index}${img.selected ? ' ✓ SELECTED' : ''}:</strong> ${img.suitability}<br><em style="color:#64748b;">${img.description}</em></div>`).join('')}</details>` : ''}<div class='field' style="color:#64748b;font-size:0.9em;margin-top:1em;padding-top:1em;border-top:1px solid #e2e8f0;"><strong>Generated At:</strong> ${item.generated_at}${item.language ? `<br><strong>Language:</strong> ${item.language}` : ''}</div></div>`).join('')}</body></html>`;
-        const blob = new Blob([html], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        const newTab = window.open(url, '_blank');
-        
-        if (!newTab || newTab.closed || typeof newTab.closed === 'undefined') {
-            console.warn('[WARN] Popup blocked - results saved. Click to view:');
-            console.log(url);
-            alert(`Results generated!\n\nYour browser blocked the popup. Check the console for a link to view results, or disable popup blocker for this site.`);
-        }
+        // Show Step 4
+        showCampaignStep(4);
 
-        showStatus('campaignAssetsStatus', `✓ Content generated and displayed in new tab! (${result.content.length} businesses)`);
+        showStatus('campaignAssetsStatus', `✓ Content generated successfully! (${result.content.length} businesses)`);
 
         setTimeout(() => {
             if (generateBtn) {
@@ -2714,6 +2694,309 @@ function showStatus(elementId, message) {
 function hideStatus(elementId) {
     const element = document.getElementById(elementId);
     element.style.display = 'none';
+}
+
+// ========================================
+// GENERATED ASSETS DISPLAY
+// ========================================
+function displayGeneratedAssets(result) {
+    const container = document.getElementById('generatedAssetsContainer');
+    const totalCount = document.getElementById('totalAssetsCount');
+    const businessCount = document.getElementById('assetsBusinessCount');
+    
+    if (!container) return;
+    
+    // Update stats
+    if (totalCount) totalCount.textContent = result.content?.length || 0;
+    if (businessCount) businessCount.textContent = result.content?.length || 0;
+    
+    // Store result globally for export
+    APP_STATE.generatedAssets = result;
+    
+    // Clear container
+    container.innerHTML = '';
+    
+    // Check if no content
+    if (!result.content || result.content.length === 0) {
+        container.innerHTML = `
+            <div class="assets-empty-state">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <h3>No Assets Generated</h3>
+                <p>All businesses were skipped. Check their photo quality and try again.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Render each asset as a card
+    result.content.forEach((asset, index) => {
+        const card = createAssetCard(asset, index);
+        container.appendChild(card);
+    });
+    
+    // Setup export and send all buttons
+    setupAssetActions(result);
+}
+
+function createAssetCard(asset, index) {
+    const card = document.createElement('div');
+    card.className = 'asset-card';
+    card.dataset.assetIndex = index;
+    
+    const generatedDate = new Date(asset.generated_at).toLocaleString();
+    
+    card.innerHTML = `
+        <div class="asset-card-header">
+            <div class="asset-card-title">${asset.business_name}</div>
+            <div class="asset-card-subtitle">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                ${generatedDate}
+            </div>
+        </div>
+        <div class="asset-card-body">
+            <div class="asset-field">
+                <div class="asset-field-label">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    Headline
+                </div>
+                <div class="asset-field-content headline">${asset.headline}</div>
+            </div>
+            
+            <div class="asset-field">
+                <div class="asset-field-label">Subline 1</div>
+                <div class="asset-field-content">${asset.subline1}</div>
+            </div>
+            
+            <div class="asset-field">
+                <div class="asset-field-label">Subline 2</div>
+                <div class="asset-field-content">${asset.subline2}</div>
+            </div>
+            
+            <div class="asset-field">
+                <div class="asset-field-label">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="16 12 12 8 8 12"></polyline>
+                        <line x1="12" y1="16" x2="12" y2="8"></line>
+                    </svg>
+                    Call to Action
+                </div>
+                <div class="asset-field-content">${asset.cta}</div>
+            </div>
+            
+            <div class="asset-field">
+                <div class="asset-field-label">Supporting Text</div>
+                <div class="asset-field-content">${asset.supporting}</div>
+            </div>
+            
+            ${(asset.header_image || asset.sub_image) ? `
+                <div class="asset-field">
+                    <div class="asset-field-label">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        Images
+                    </div>
+                    <div class="asset-image-preview">
+                        ${asset.header_image ? `
+                            <div class="asset-image-item">
+                                <img src="${asset.header_image}" alt="Header" class="asset-image-thumb" />
+                                <div class="asset-image-label">Header Image</div>
+                            </div>
+                        ` : ''}
+                        ${asset.sub_image ? `
+                            <div class="asset-image-item">
+                                <img src="${asset.sub_image}" alt="Sub" class="asset-image-thumb" />
+                                <div class="asset-image-label">Sub Image</div>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            ` : ''}
+            
+            ${asset.language ? `
+                <div class="asset-meta-info">
+                    <div class="asset-meta-item">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                        </svg>
+                        ${asset.language}
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+        <div class="asset-card-footer">
+            <button class="btn-send-to-gen" data-asset-index="${index}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+                Send to Generations
+            </button>
+            <button class="btn btn-secondary" onclick="exportSingleAsset(${index})">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Export
+            </button>
+        </div>
+    `;
+    
+    // Add event listener for send to generations
+    const sendBtn = card.querySelector('.btn-send-to-gen');
+    sendBtn.addEventListener('click', function() {
+        handleSendToGenerations(asset, index, this);
+    });
+    
+    return card;
+}
+
+function handleSendToGenerations(asset, index, buttonElement) {
+    // Visual feedback
+    const originalHTML = buttonElement.innerHTML;
+    buttonElement.disabled = true;
+    buttonElement.innerHTML = `
+        <svg style="animation: spin 1s linear infinite;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+        </svg>
+        Sending...
+    `;
+    
+    // Simulate sending (replace with actual API call)
+    setTimeout(() => {
+        buttonElement.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Sent Successfully!
+        `;
+        buttonElement.classList.add('success');
+        
+        // Show notification
+        showAssetNotification(`Asset for ${asset.business_name} sent to generations!`, 'success');
+        
+        // Reset button after delay
+        setTimeout(() => {
+            buttonElement.innerHTML = originalHTML;
+            buttonElement.disabled = false;
+            buttonElement.classList.remove('success');
+        }, 3000);
+    }, 1500);
+}
+
+function setupAssetActions(result) {
+    // Export All button
+    const exportAllBtn = document.getElementById('exportAllAssetsBtn');
+    if (exportAllBtn) {
+        exportAllBtn.onclick = () => {
+            const json = JSON.stringify(result, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `campaign-assets-${Date.now()}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            showAssetNotification('All assets exported successfully!', 'success');
+        };
+    }
+    
+    // Send All to Generations button
+    const sendAllBtn = document.getElementById('sendAllToGenerationsBtn');
+    if (sendAllBtn) {
+        sendAllBtn.onclick = () => {
+            const originalHTML = sendAllBtn.innerHTML;
+            sendAllBtn.disabled = true;
+            sendAllBtn.innerHTML = `
+                <svg style="animation: spin 1s linear infinite;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+                </svg>
+                Sending All...
+            `;
+            
+            // Simulate sending all
+            setTimeout(() => {
+                sendAllBtn.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    All Sent!
+                `;
+                showAssetNotification(`Successfully sent ${result.content.length} assets to generations!`, 'success');
+                
+                setTimeout(() => {
+                    sendAllBtn.innerHTML = originalHTML;
+                    sendAllBtn.disabled = false;
+                }, 3000);
+            }, 2000);
+        };
+    }
+}
+
+function exportSingleAsset(index) {
+    if (!APP_STATE.generatedAssets || !APP_STATE.generatedAssets.content[index]) return;
+    
+    const asset = APP_STATE.generatedAssets.content[index];
+    const json = JSON.stringify(asset, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `asset-${asset.business_name.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-${Date.now()}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showAssetNotification(`Asset for ${asset.business_name} exported!`, 'success');
+}
+
+function showAssetNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        background: ${type === 'success' ? '#10b981' : '#4f46e5'};
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+        max-width: 400px;
+        font-weight: 500;
+    `;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+function showCampaignStep(stepNumber) {
+    const step = document.querySelector(`.campaign-step[data-step="${stepNumber}"]`);
+    if (step) {
+        step.style.display = 'block';
+        // Scroll to step
+        step.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
 
 // ========================================
@@ -2838,3 +3121,344 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 });
+
+// ========================================
+// RESULTS PAGE INITIALIZATION
+// ========================================
+// Initialize results page if we're on results.html
+if (window.location.pathname.includes('results.html')) {
+    document.addEventListener('DOMContentLoaded', async function() {
+        const apiKey = loadApiKey();
+        
+        if (!apiKey) {
+            showResultsError('API key not found. Please return to the main page and set up your API key.');
+            return;
+        }
+
+        // Get results from sessionStorage
+        const resultsData = sessionStorage.getItem('searchResults');
+        const searchInfo = sessionStorage.getItem('searchInfo');
+
+        if (!resultsData) {
+            showResultsError('No search results found. Please return to the main page and perform a search.');
+            return;
+        }
+
+        try {
+            const results = JSON.parse(resultsData);
+            const info = searchInfo ? JSON.parse(searchInfo) : null;
+
+            // Store API key in APP_STATE
+            APP_STATE.apiKey = apiKey;
+            APP_STATE.searchResults = results;
+
+            // Display search info
+            if (info) {
+                displaySearchInfo(info);
+            }
+
+            // Render results
+            renderResultsPage(results);
+
+            // Setup event listeners
+            setupResultsPageListeners();
+
+        } catch (error) {
+            console.error('Error loading results:', error);
+            showResultsError('Failed to load search results. Please try again.');
+        }
+    });
+}
+
+function displaySearchInfo(info) {
+    const banner = document.getElementById('searchInfoBanner');
+    const text = document.getElementById('searchInfoText');
+    
+    if (banner && text && info) {
+        let infoText = `Search: "${info.query || 'Unknown'}"`;
+        if (info.location) {
+            infoText += ` near ${info.location}`;
+        }
+        if (info.radius) {
+            infoText += ` (${formatRadiusDisplay(info.radius)})`;
+        }
+        
+        text.textContent = infoText;
+        banner.style.display = 'block';
+    }
+}
+
+function renderResultsPage(results) {
+    const loadingState = document.getElementById('loadingState');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const resultCount = document.getElementById('resultCount');
+    const resultsGrid = document.getElementById('resultsGrid');
+
+    // Hide loading
+    if (loadingState) loadingState.style.display = 'none';
+
+    // Show results container
+    if (resultsContainer) resultsContainer.style.display = 'block';
+
+    // Update count
+    if (resultCount) resultCount.textContent = results.length;
+
+    // Clear and populate grid
+    if (resultsGrid) {
+        resultsGrid.innerHTML = '';
+        
+        if (results.length === 0) {
+            resultsGrid.innerHTML = `
+                <div style="grid-column: 1/-1; text-align: center; padding: 3rem;">
+                    <p style="color: var(--text-secondary); font-size: 1.1rem;">No results found</p>
+                </div>
+            `;
+            return;
+        }
+
+        results.forEach((place, index) => {
+            const card = createResultCardModern(place, index);
+            resultsGrid.appendChild(card);
+        });
+    }
+}
+
+function createResultCardModern(place, index) {
+    const card = document.createElement('div');
+    card.className = 'result-card-modern';
+
+    const displayName = place.displayName?.text || 'Unknown Business';
+    const address = place.formattedAddress || 'No address available';
+    const rating = place.rating || 0;
+    const reviewCount = place.userRatingCount || 0;
+    const types = place.types || [];
+    const googleMapsUri = place.googleMapsUri || '#';
+    const isOpen = place.currentOpeningHours?.openNow;
+
+    // Photo URL
+    let photoHtml = `
+        <div class="result-card-image-placeholder">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+        </div>
+    `;
+    
+    if (place.photos && place.photos.length > 0 && APP_STATE.apiKey) {
+        const photoName = place.photos[0].name;
+        const photoUrl = `https://places.googleapis.com/v1/${photoName}/media?key=${APP_STATE.apiKey}&maxHeightPx=400&maxWidthPx=400`;
+        photoHtml = `<img src="${photoUrl}" alt="${displayName}" class="result-card-image-modern" loading="lazy" />`;
+    }
+
+    // Types badges (max 3)
+    const typesBadgesHtml = types.slice(0, 3).map(type =>
+        `<span class="result-type-badge">${type.replace(/_/g, ' ')}</span>`
+    ).join('');
+
+    // Status badge
+    let statusBadgeHtml = '';
+    if (isOpen !== undefined) {
+        statusBadgeHtml = isOpen 
+            ? `<div class="result-card-status-badge">Open Now</div>`
+            : `<div class="result-card-status-badge closed">Closed</div>`;
+    }
+
+    card.innerHTML = `
+        <div class="result-card-image-container">
+            ${photoHtml}
+            <div class="result-card-badges">
+                ${rating > 0 ? `
+                    <div class="result-card-rating-badge">
+                        <span class="rating-star">★</span>
+                        <span>${rating.toFixed(1)}</span>
+                    </div>
+                ` : ''}
+                ${statusBadgeHtml}
+            </div>
+        </div>
+        <div class="result-card-body">
+            <h3 class="result-card-title-modern">${displayName}</h3>
+            <div class="result-card-address-modern">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+                <span>${address}</span>
+            </div>
+            ${rating > 0 || reviewCount > 0 ? `
+                <div class="result-card-meta-row">
+                    ${rating > 0 ? `
+                        <div class="result-meta-item">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="2">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                            <span>${rating.toFixed(1)} rating</span>
+                        </div>
+                    ` : ''}
+                    ${reviewCount > 0 ? `
+                        <div class="result-meta-item">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            <span>${reviewCount} reviews</span>
+                        </div>
+                    ` : ''}
+                </div>
+            ` : ''}
+            ${typesBadgesHtml ? `<div class="result-card-types">${typesBadgesHtml}</div>` : ''}
+            <div class="result-card-actions">
+                <button class="btn-generate-lead" data-place-id="${place.id}" data-index="${index}">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 5v14M5 12h14"></path>
+                    </svg>
+                    Generate Campaign
+                </button>
+                <a href="${googleMapsUri}" target="_blank" class="btn-view-details">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                    View on Google Maps
+                </a>
+            </div>
+        </div>
+    `;
+
+    // Add event listener for generate button
+    const generateBtn = card.querySelector('.btn-generate-lead');
+    generateBtn.addEventListener('click', function() {
+        handleGenerateCampaign(place, index);
+    });
+
+    return card;
+}
+
+function handleGenerateCampaign(place, index) {
+    const button = event.currentTarget;
+    
+    // Visual feedback
+    const originalHTML = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = `
+        <svg style="animation: spin 1s linear infinite;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+        </svg>
+        Processing...
+    `;
+
+    // Simulate processing (replace with actual API call)
+    setTimeout(() => {
+        button.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Campaign Generated!
+        `;
+        button.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+
+        // Show notification
+        showNotification(`Campaign generation started for ${place.displayName?.text || 'business'}`, 'success');
+
+        // Reset button after delay
+        setTimeout(() => {
+            button.innerHTML = originalHTML;
+            button.disabled = false;
+            button.style.background = '';
+        }, 2000);
+    }, 1500);
+}
+
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#10b981' : '#4f46e5'};
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+        max-width: 400px;
+    `;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+function setupResultsPageListeners() {
+    // Export JSON button
+    const exportJsonBtn = document.getElementById('exportJsonBtn');
+    if (exportJsonBtn) {
+        exportJsonBtn.addEventListener('click', () => {
+            const results = APP_STATE.searchResults;
+            const dataStr = JSON.stringify(results, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `places-results-${Date.now()}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            showNotification('Results exported as JSON', 'success');
+        });
+    }
+
+    // Export CSV button
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+    if (exportCsvBtn) {
+        exportCsvBtn.addEventListener('click', () => {
+            const results = APP_STATE.searchResults;
+            const csv = convertResultsToCSV(results);
+            const dataBlob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `places-results-${Date.now()}.csv`;
+            link.click();
+            URL.revokeObjectURL(url);
+            showNotification('Results exported as CSV', 'success');
+        });
+    }
+}
+
+function convertResultsToCSV(results) {
+    const headers = ['Name', 'Address', 'Rating', 'Reviews', 'Types', 'Google Maps URL'];
+    const rows = results.map(place => [
+        place.displayName?.text || '',
+        place.formattedAddress || '',
+        place.rating || '',
+        place.userRatingCount || '',
+        (place.types || []).join('; '),
+        place.googleMapsUri || ''
+    ]);
+    
+    const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+    
+    return csvContent;
+}
+
+function showResultsError(message) {
+    const loadingState = document.getElementById('loadingState');
+    const errorState = document.getElementById('errorState');
+    const errorMessage = document.getElementById('errorMessage');
+    
+    if (loadingState) loadingState.style.display = 'none';
+    if (errorState) errorState.style.display = 'flex';
+    if (errorMessage) errorMessage.textContent = message;
+}

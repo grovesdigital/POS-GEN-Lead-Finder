@@ -3,74 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search Results - Google Places Query Tool</title>
+    <title>Search Results - POS-Gen Lead Finder</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
-    <div class="container">
-        <header>
-            <h1>Google Places Query Results</h1>
-            <a href="index.html" class="btn btn-secondary">← New Search</a>
-        </header>
-
-        <div id="searchInfo" class="search-info"></div>
-
-        <div id="loadingMessage" class="loading-message">
-            <div class="spinner"></div>
-            <p>Loading results from Google Places API...</p>
+<body class="results-page-body">
+    <!-- Header -->
+    <header class="results-header-bar">
+        <div class="results-header-content">
+            <div class="results-header-left">
+                <div class="brand-logo">
+                    <span class="brand-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                    </span>
+                    <div class="brand-text">
+                        <span class="brand-name">POS-Gen</span>
+                        <span class="brand-tagline">Lead Finder</span>
+                    </div>
+                </div>
+            </div>
+            <div class="results-header-right">
+                <a href="index.html" class="btn btn-secondary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                    New Search
+                </a>
+            </div>
         </div>
+    </header>
 
-        <div id="errorContainer" class="error-message" style="display: none;"></div>
-
-        <div id="resultsContainer" style="display: none;">
-            <div class="results-header">
-                <div class="results-count">
-                    <h2>Results: <span id="resultCount">0</span></h2>
+    <div class="results-page-container">
+        <!-- Search Info Banner -->
+        <div id="searchInfoBanner" class="search-info-banner" style="display: none;">
+            <div class="search-info-content">
+                <div class="search-info-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
                 </div>
-                <div class="results-actions">
-                    <button id="loadMoreBtn" class="btn btn-secondary" style="display: none;">Load More Results</button>
-                    <button id="exportJsonBtn" class="btn btn-primary">Export as JSON</button>
-                    <button id="exportCsvBtn" class="btn btn-primary">Export as CSV</button>
-                </div>
-            </div>
-
-            <div class="view-toggle">
-                <button id="tableViewBtn" class="btn btn-view active">Table View</button>
-                <button id="cardViewBtn" class="btn btn-view">Card View</button>
-            </div>
-
-            <!-- Table View -->
-            <div id="tableView" class="table-container">
-                <table class="results-table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Address</th>
-                            <th>Rating</th>
-                            <th>Reviews</th>
-                            <th>Status</th>
-                            <th>Open Now</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody">
-                        <!-- Results will be inserted here -->
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Card View -->
-            <div id="cardView" class="card-container" style="display: none;">
-                <!-- Cards will be inserted here -->
-            </div>
-
-            <div id="attributions" class="attributions" style="display: none;">
-                <!-- Photo attributions will be displayed here -->
+                <div id="searchInfoText" class="search-info-text"></div>
             </div>
         </div>
 
-        <footer>
-            <p>Internal Tool - Google Places Query | Compliant with Google Maps Platform TOS</p>
+        <!-- Loading State -->
+        <div id="loadingState" class="loading-state">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Loading results from Google Places API...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="error-state" style="display: none;">
+            <div class="error-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+            </div>
+            <h3>Something went wrong</h3>
+            <p id="errorMessage"></p>
+            <a href="index.html" class="btn btn-primary">Try Again</a>
+        </div>
+
+        <!-- Results Container -->
+        <div id="resultsContainer" class="results-main-container" style="display: none;">
+            <!-- Controls Bar -->
+            <div class="results-controls-bar">
+                <div class="results-count-badge">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    <span id="resultCount">0</span> Results
+                </div>
+                
+                <div class="results-actions-group">
+                    <button id="exportJsonBtn" class="btn btn-secondary btn-sm">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        JSON
+                    </button>
+                    <button id="exportCsvBtn" class="btn btn-secondary btn-sm">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        CSV
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Grid -->
+            <div id="resultsGrid" class="results-grid">
+                <!-- Result cards will be inserted here -->
+            </div>
+
+            <!-- Load More Button -->
+            <div id="loadMoreContainer" class="load-more-container" style="display: none;">
+                <button id="loadMoreBtn" class="btn btn-secondary">
+                    Load More Results
+                </button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="results-footer">
+            <p>POS-Gen Lead Finder • Compliant with Google Maps Platform TOS</p>
         </footer>
     </div>
 

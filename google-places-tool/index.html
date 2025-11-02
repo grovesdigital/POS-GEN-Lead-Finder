@@ -5,13 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>POS-Gen Lead Finder - Google Places Query Tool</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <!-- Setup Screen (First Time) -->
     <div id="setupScreen" class="setup-screen" style="display: none;">
         <div class="setup-container">
             <div class="setup-content">
-                <div class="setup-icon">🎯</div>
+                <div class="setup-icon">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                </div>
                 <div class="setup-brand">
                     <h1>POS-Gen Lead Finder</h1>
                     <span class="setup-badge">PRO</span>
@@ -80,7 +88,12 @@
                 <div class="header-content">
                     <div class="header-left">
                         <div class="brand-logo">
-                            <span class="brand-icon">🎯</span>
+                            <span class="brand-icon">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                    <circle cx="12" cy="10" r="3"></circle>
+                                </svg>
+                            </span>
                             <div class="brand-text">
                                 <span class="brand-name">POS-Gen</span>
                                 <span class="brand-tagline">Lead Finder</span>
@@ -88,12 +101,15 @@
                         </div>
                         <div class="header-meta">
                             <span class="header-badge">PRO</span>
-                            <span class="header-description">Powered by Google Places API • Find &amp; Generate Leads</span>
+                            <span class="header-description">Powered by Google Places API • Find & Generate Leads</span>
                         </div>
                     </div>
                     <div class="header-right">
                         <button id="settingsBtn" class="btn btn-icon" title="Settings">
-                            ⚙️
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M12 1v6m0 6v6m-9-9h6m6 0h6"></path>
+                            </svg>
                         </button>
                 </div>
             </div>
@@ -104,23 +120,38 @@
             <div class="branding-content">
                 <div class="view-toggle-bar">
                     <button id="quickSearchViewBtn" class="btn-view-toggle active">
-                        🔍 Quick Search
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        Quick Search
                     </button>
                     <button id="campaignBuilderViewBtn" class="btn-view-toggle">
-                        🎯 Campaign Builder
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        Campaign Builder
                     </button>
                 </div>
                 <div class="branding-stats">
                     <div class="stat-item">
-                        <span class="stat-icon">🗺️</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        </svg>
                         <span class="stat-label">Search</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-icon">📊</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 3v18h18"></path>
+                            <path d="m19 9-5 5-4-4-3 3"></path>
+                        </svg>
                         <span class="stat-label">Analyze</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-icon">✨</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path>
+                        </svg>
                         <span class="stat-label">Generate</span>
                     </div>
                 </div>
@@ -135,7 +166,12 @@
                 <div id="map" class="map-container-fullscreen"></div>
                 <div id="mapPlaceholder" class="map-placeholder-fullscreen">
                     <div class="placeholder-content">
-                        <div class="placeholder-icon">🗺️</div>
+                        <div class="placeholder-icon">
+                            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                        </div>
                         <h3>Search for Places</h3>
                         <p>Enter a location and select business types to preview results on the map</p>
                     </div>
@@ -144,7 +180,13 @@
                 <!-- Floating Search Panel -->
                 <div class="floating-search-panel">
                 <div class="panel-header-floating">
-                    <h2>🔍 Search Parameters</h2>
+                    <h2>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        Search Parameters
+                    </h2>
                     <div class="panel-header-right">
                         <span id="resultsCount" class="results-badge-header">0 results</span>
                         <button id="togglePanelBtn" class="btn-toggle-panel" title="Toggle panel">
@@ -158,7 +200,12 @@
                         <!-- Location Search -->
                         <div class="form-group">
                             <label for="locationSearch">
-                                <span class="label-icon">📍</span>
+                                <span class="label-icon">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                        <circle cx="12" cy="10" r="3"></circle>
+                                    </svg>
+                                </span>
                                 Search Location
                             </label>
                             <input
@@ -173,7 +220,12 @@
                         <!-- Radius Slider -->
                         <div class="form-group hidden-until-location" id="radiusGroup">
                             <label for="radiusSlider">
-                                <span class="label-icon">📏</span>
+                                <span class="label-icon">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <path d="M12 2v10l3 3"></path>
+                                    </svg>
+                                </span>
                                 Search Radius: <span id="radiusValue">1km</span>
                             </label>
                             <input
@@ -194,7 +246,14 @@
                         <!-- Business Types (Checkbox List) -->
                         <div class="form-group hidden-until-location" id="businessTypesGroup">
                             <label>
-                                <span class="label-icon">🏢</span>
+                                <span class="label-icon">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M3 21h18"></path>
+                                        <path d="M3 7v14"></path>
+                                        <path d="M21 7v14"></path>
+                                        <path d="M6 3h12v4H6z"></path>
+                                    </svg>
+                                </span>
                                 Business Types
                             </label>
                             <small>Select one or more business types to search</small>
@@ -219,10 +278,18 @@
                 <!-- Action Buttons Footer -->
                 <div class="floating-panel-footer">
                     <button type="button" id="updateMapBtn" class="btn btn-primary btn-footer">
-                        🔍 Find businesses
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        Find businesses
                     </button>
                     <button type="button" id="viewResultsBtn" class="btn btn-secondary btn-footer" disabled>
-                        📋 View Results
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        View Results
                     </button>
                 </div>
             </div>
@@ -393,13 +460,21 @@
                         <div class="step-content" data-step="2">
                             <div class="step-actions-header">
                                 <button class="btn-select-all-groups" id="selectAllGroupsBtn" style="display: none;">
-                                    ✓ Select All Groups
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    Select All Groups
                                 </button>
                             </div>
 
                             <div id="campaignResultsContainer" class="campaign-results-container">
                                 <div class="empty-state">
-                                    <div class="empty-state-icon">🎯</div>
+                                    <div class="empty-state-icon">
+                                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                            <circle cx="12" cy="10" r="3"></circle>
+                                        </svg>
+                                    </div>
                                     <h3>No Results Yet</h3>
                                     <p>Configure your campaign and click "Find Top Businesses" to see suggestions</p>
                                 </div>
@@ -447,6 +522,53 @@
                             <div id="campaignAssetsError" class="error-message" style="display: none; margin-top: 1rem;"></div>
                         </div>
                     </div>
+
+                    <!-- Step 4: Generated Assets -->
+                    <div class="campaign-step" data-step="4" style="display: none;">
+                        <div class="step-header" data-step="4">
+                            <span class="step-number">4</span>
+                            <div class="step-header-text">
+                                <h2>Generated Campaign Assets</h2>
+                                <p class="step-subtitle">Review and deploy your AI-generated marketing content.</p>
+                            </div>
+                            <button class="step-toggle" data-step="4" aria-label="Toggle step">−</button>
+                        </div>
+                        <div class="step-content" data-step="4">
+                            <div class="assets-header-bar">
+                                <div class="assets-stats">
+                                    <div class="stat-item">
+                                        <span class="stat-label">Total Assets</span>
+                                        <span class="stat-value" id="totalAssetsCount">0</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-label">Businesses</span>
+                                        <span class="stat-value" id="assetsBusinessCount">0</span>
+                                    </div>
+                                </div>
+                                <div class="assets-actions-bar">
+                                    <button type="button" id="exportAllAssetsBtn" class="btn btn-secondary btn-sm">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                            <polyline points="7 10 12 15 17 10"></polyline>
+                                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                                        </svg>
+                                        Export All
+                                    </button>
+                                    <button type="button" id="sendAllToGenerationsBtn" class="btn btn-primary btn-sm">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                        </svg>
+                                        Send All to Generations
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="generatedAssetsContainer" class="generated-assets-grid">
+                                <!-- Assets will be rendered here -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <!-- End Campaign Builder View -->
@@ -459,7 +581,12 @@
             <div class="header-content">
                 <div class="header-left">
                     <div class="brand-logo">
-                        <span class="brand-icon">🎯</span>
+                        <span class="brand-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                        </span>
                         <div class="brand-text">
                             <span class="brand-name">POS-Gen</span>
                             <span class="brand-tagline">Lead Finder</span>
@@ -494,7 +621,14 @@
             <div class="results-controls">
                 <div class="sort-section">
                     <label for="sortSelect">
-                        <span class="sort-icon">⇅</span>
+                        <span class="sort-icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m3 16 4 4 4-4"></path>
+                                <path d="M7 20V4"></path>
+                                <path d="m21 8-4-4-4 4"></path>
+                                <path d="M17 4v16"></path>
+                            </svg>
+                        </span>
                         Sort by:
                     </label>
                     <select id="sortSelect" class="sort-dropdown">
@@ -522,7 +656,12 @@
             </div>
 
             <div id="noResults" class="no-results" style="display: none;">
-                <div class="no-results-icon">🔍</div>
+                <div class="no-results-icon">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                </div>
                 <h3>No Results Found</h3>
                 <p>Try adjusting your search parameters or increasing the radius</p>
             </div>
@@ -571,7 +710,12 @@
                     </div>
 
                     <div class="settings-info">
-                        <p><strong>Current Status:</strong> <span id="apiKeyStatus" class="status-badge">✓ Configured</span></p>
+                        <p><strong>Current Status:</strong> <span id="apiKeyStatus" class="status-badge">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            Configured
+                        </span></p>
                         <p><small>Your API key is encrypted and stored locally</small></p>
                     </div>
 
