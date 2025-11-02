@@ -539,6 +539,7 @@
             </div>
             <div class="modal-body">
                 <form id="settingsForm">
+
                     <div class="form-group">
                         <label for="settingsApiKey">Google API Key</label>
                         <input
@@ -547,6 +548,26 @@
                             placeholder="Enter new API key"
                         >
                         <small>Leave blank to keep current key</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="settingsLLMApiKey">LLM API Key</label>
+                        <input
+                            type="text"
+                            id="settingsLLMApiKey"
+                            placeholder="Enter your LLM API key"
+                        >
+                        <small>Used for asset generation (GPT-5-Nano)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="settingsLLMApiUrl">LLM API Endpoint</label>
+                        <input
+                            type="text"
+                            id="settingsLLMApiUrl"
+                            placeholder="https://your-llm-endpoint.com/v1/generate"
+                        >
+                        <small>Endpoint for LLM asset generation</small>
                     </div>
 
                     <div class="settings-info">

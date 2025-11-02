@@ -1,3 +1,21 @@
+// LLM API KEY MANAGEMENT
+function saveLLMApiKey(key) {
+    localStorage.setItem('llm_api_key', key);
+    return true;
+}
+
+function loadLLMApiKey() {
+    return localStorage.getItem('llm_api_key') || '';
+}
+
+function saveLLMApiUrl(url) {
+    localStorage.setItem('llm_api_url', url);
+    return true;
+}
+
+function loadLLMApiUrl() {
+    return localStorage.getItem('llm_api_url') || '';
+}
 // ========================================
 // GLOBAL STATE
 // ========================================
@@ -2297,7 +2315,6 @@ async function generateCampaignAssets() {
             },
             businesses: APP_STATE.campaign.selectedBusinesses.map(business => {
                 const typeLabel = getTypeLabel(business.type);
-
                 return {
                     id: business.id,
                     name: business.displayName?.text || 'Unknown',
@@ -2323,75 +2340,31 @@ async function generateCampaignAssets() {
             })
         };
 
-        // Send to webhook
-        showStatus('campaignAssetsStatus', `Sending data to webhook (${payload.businesses.length} businesses)...`);
+        // Inject LLM API key and endpoint into environment for backend
+        const llmApiKey = loadLLMApiKey();
+        const llmApiUrl = loadLLMApiUrl();
+        payload.llmApiKey = llmApiKey;
+        payload.llmApiUrl = llmApiUrl;
 
-        const webhookUrl = 'https://n8n.groves.digital/webhook-test/0bdc8a49-d46c-4166-982d-917284a44032';
-
-        // Log payload for debugging
-        console.log('Asset Generation Payload:', payload);
-        console.log('Payload JSON:', JSON.stringify(payload, null, 2));
-
-        let response;
-        try {
-            response = await fetch(webhookUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payload),
-                mode: 'cors' // Explicitly set CORS mode
-            });
-        } catch (fetchError) {
-            // CORS or network error
-            console.error('Fetch error:', fetchError);
-
-            // Try with no-cors mode as fallback (won't get response but will send data)
-            console.log('Attempting to send with no-cors mode...');
-
-            try {
-                await fetch(webhookUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(payload),
-                    mode: 'no-cors' // Fallback mode
-                });
-
-                // With no-cors, we can't read the response, but the request was sent
-                showStatus('campaignAssetsStatus', `✓ Assets data sent! (${payload.businesses.length} businesses)\n⚠️ CORS prevented response verification. Check n8n webhook logs.`);
-
-                // Show detailed info
-                alert(`Data sent successfully!\n\nNote: Due to CORS restrictions, we cannot verify the webhook response.\n\nPlease check your n8n webhook logs to confirm receipt.\n\nTo fix this:\n1. In n8n, add a "Set Response Headers" action\n2. Set "Access-Control-Allow-Origin" to "*"\n3. Set "Access-Control-Allow-Methods" to "POST, OPTIONS"\n\nPayload logged to console for debugging.`);
-
-                setTimeout(() => {
-                    if (generateBtn) {
-                        delete generateBtn.dataset.processing;
-                        delete generateBtn.dataset.pendingLabel;
-                    }
-                    renderSelectedBusinesses();
-                    hideStatus('campaignAssetsStatus');
-                }, 3000);
-
-                return; // Exit function
-            } catch (noCorsError) {
-                throw new Error(`CORS Error: The webhook endpoint must allow cross-origin requests. Configure CORS headers in n8n. Original error: ${fetchError.message}`);
-            }
-        }
-
+        // POST to backend for LLM asset generation
+        const response = await fetch('/api/generate-assets', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
         if (!response.ok) {
-            throw new Error(`Webhook error: ${response.status} ${response.statusText}`);
+            throw new Error(`Backend error: ${response.status} ${response.statusText}`);
         }
+        const result = await response.json();
+        // result: { campaign, assets }
+        // Show generated assets in a new tab as HTML
+        const html = `<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><title>Generated Campaign Assets</title><style>body{font-family:Arial,sans-serif;margin:2em;} .asset{border:1px solid #ccc;margin-bottom:2em;padding:1em;} img{max-width:300px;display:block;margin-bottom:1em;} .field{margin-bottom:0.5em;}</style></head><body><h1>Campaign: ${result.campaign.campaign_name || result.campaign.name}</h1><h2>Assets</h2>${result.assets.map(asset => `<div class='asset'><h3>${asset.business_name}</h3><div class='field'><strong>Headline:</strong> ${asset.headline}</div><div class='field'><strong>Subline 1:</strong> ${asset.subline1}</div><div class='field'><strong>Subline 2:</strong> ${asset.subline2}</div><div class='field'><strong>CTA:</strong> ${asset.cta}</div><div class='field'><strong>Supporting:</strong> ${asset.supporting}</div><div class='field'><strong>Header Image:</strong><br>${asset.header_image ? `<img src='${asset.header_image}' alt='Header'>` : 'N/A'}</div><div class='field'><strong>Sub Image:</strong><br>${asset.sub_image ? `<img src='${asset.sub_image}' alt='Sub'>` : 'N/A'}</div><div class='field'><strong>Generated At:</strong> ${asset.generated_at}</div></div>`).join('')}</body></html>`;
+        const blob = new Blob([html], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
 
-        const result = await response.json().catch(() => ({ success: true }));
+        showStatus('campaignAssetsStatus', `✓ Assets generated and displayed in new tab! (${result.assets.length} businesses)`);
 
-        // Show success message
-        showStatus('campaignAssetsStatus', `✓ Assets generated successfully! Sent ${payload.businesses.length} businesses to webhook.`);
-
-        console.log('Webhook Response:', result);
-
-        // Re-enable button after delay
         setTimeout(() => {
             if (generateBtn) {
                 delete generateBtn.dataset.processing;
@@ -2400,12 +2373,9 @@ async function generateCampaignAssets() {
             renderSelectedBusinesses();
             hideStatus('campaignAssetsStatus');
         }, 3000);
-
     } catch (error) {
         console.error('Asset generation error:', error);
         showError('campaignAssetsError', `Failed to generate assets: ${error.message}`);
-
-        // Re-enable button
         if (generateBtn) {
             delete generateBtn.dataset.processing;
             delete generateBtn.dataset.pendingLabel;
@@ -2430,23 +2400,38 @@ function closeSettingsModal() {
 
 function saveSettings() {
     const newApiKey = document.getElementById('settingsApiKey').value.trim();
+    const newLLMApiKey = document.getElementById('settingsLLMApiKey').value.trim();
+    const newLLMApiUrl = document.getElementById('settingsLLMApiUrl').value.trim();
 
+    let changed = false;
     if (newApiKey) {
         if (saveApiKey(newApiKey)) {
-            closeSettingsModal();
-            alert('API key updated successfully. Please reload the page.');
-            location.reload();
+            changed = true;
         } else {
-            showError('settingsError', 'Failed to save API key');
+            showError('settingsError', 'Failed to save Google API key');
+            return;
         }
-    } else {
-        closeSettingsModal();
+    }
+    if (newLLMApiKey) {
+        localStorage.setItem('llm_api_key', newLLMApiKey);
+        changed = true;
+    }
+    if (newLLMApiUrl) {
+        localStorage.setItem('llm_api_url', newLLMApiUrl);
+        changed = true;
+    }
+    closeSettingsModal();
+    if (changed) {
+        alert('Settings updated successfully. Please reload the page.');
+        location.reload();
     }
 }
 
 function clearSettings() {
-    if (confirm('Are you sure you want to clear your API key? You will need to set it up again.')) {
+    if (confirm('Are you sure you want to clear your API keys? You will need to set them up again.')) {
         clearApiKey();
+        localStorage.removeItem('llm_api_key');
+        localStorage.removeItem('llm_api_url');
         location.reload();
     }
 }
