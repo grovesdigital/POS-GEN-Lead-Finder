@@ -26,7 +26,7 @@ const APP_STATE = {
     autocomplete: null,
     selectedLocation: null,
     selectedTypes: [],
-    radius: 5000,
+    radius: 1000, // Default 1km (matches slider value=4)
     searchResults: [],
     infoWindows: [],
     radiusCircle: null,
@@ -261,14 +261,26 @@ function loadGoogleMapsScript(apiKey) {
 
 function initializeMap() {
     const mapContainer = document.getElementById('map');
-    const defaultCenter = { lat: 40.7128, lng: -74.0060 }; // New York City
-
+    const defaultCenter = { lat: 53.5511, lng: 9.9937 }; // Hamburg, Germany
+    
+    // Create map first
     APP_STATE.map = new google.maps.Map(mapContainer, {
         center: defaultCenter,
         zoom: 12,
         mapTypeControl: true,
         streetViewControl: false,
         fullscreenControl: true
+    });
+
+    // Apply offset for open panel after map is created
+    google.maps.event.addListenerOnce(APP_STATE.map, 'idle', function() {
+        const panel = document.querySelector('.floating-search-panel');
+        if (panel && !panel.classList.contains('collapsed')) {
+            const panelWidth = panel.offsetWidth;
+            
+            // Shift LEFT by 1/4 of panel width for initial load
+            APP_STATE.map.panBy(-panelWidth / 4, 0);
+        }
     });
 
     // Hide placeholder
@@ -307,9 +319,13 @@ function onPlaceSelected() {
     // Show hidden form elements
     showSearchParameters();
 
-    // Center map on selected location with offset for open panel
-    centerMapWithOffset(place.geometry.location);
+    // Set zoom first, then center with offset
     APP_STATE.map.setZoom(14);
+    
+    // Wait for zoom to complete, then center with offset
+    google.maps.event.addListenerOnce(APP_STATE.map, 'idle', () => {
+        centerMapWithOffset(place.geometry.location);
+    });
 
     // Clear previous markers
     clearMarkers();
@@ -346,32 +362,23 @@ function showSearchParameters() {
 // ========================================
 // MAP CENTERING WITH OFFSET
 // ========================================
-function centerMapWithOffset(location) {
+function centerMapWithOffset(location, applyOffset = true) {
     const panel = document.querySelector('.floating-search-panel');
     const isPanelCollapsed = panel && panel.classList.contains('collapsed');
 
-    if (!isPanelCollapsed && panel) {
-        // Panel is open - offset the center
-        // Panel width is 420px (or 380px on tablet, auto on mobile)
-        const panelWidth = panel.offsetWidth;
-
-        // Calculate offset: shift right by half the panel width
-        const scale = Math.pow(2, APP_STATE.map.getZoom());
-        const worldCoordinateCenter = APP_STATE.map.getProjection().fromLatLngToPoint(location);
-        const pixelOffset = new google.maps.Point(
-            (panelWidth / 2) / scale,
-            0
-        );
-
-        const worldCoordinateNewCenter = new google.maps.Point(
-            worldCoordinateCenter.x - pixelOffset.x,
-            worldCoordinateCenter.y - pixelOffset.y
-        );
-
-        const newCenter = APP_STATE.map.getProjection().fromPointToLatLng(worldCoordinateNewCenter);
-        APP_STATE.map.setCenter(newCenter);
+    if (applyOffset && !isPanelCollapsed && panel) {
+        // Panel is open - shift the map LEFT slightly
+        APP_STATE.map.setCenter(location);
+        
+        // Use panBy after a short delay to ensure map is ready
+        setTimeout(() => {
+            const panelWidth = panel.offsetWidth;
+            
+            // Shift LEFT by 1/4 of the panel width
+            APP_STATE.map.panBy(-panelWidth / 4, 0);
+        }, 100);
     } else {
-        // Panel is closed or doesn't exist - center normally
+        // No offset or panel is collapsed - center normally
         APP_STATE.map.setCenter(location);
     }
 }
@@ -485,6 +492,8 @@ function updateRadiusCircle() {
         fillColor: '#667eea',
         fillOpacity: 0.15
     });
+    
+    // Don't re-center here - let the calling function handle centering
 }
 
 // ========================================
@@ -700,23 +709,43 @@ function displayMarkersOnMap(places) {
                         <div style="font-size: 1rem; font-weight: 700; margin-bottom: 6px;">${place.displayName?.text || 'Unknown'}</div>
                         <div style="color: #666; font-size: 0.85rem; margin-bottom: 8px;">${place.formattedAddress || 'No address'}</div>
                         ${place.rating ? `<div style="color: #f59e0b; font-weight: 600; font-size: 0.9rem; margin-bottom: 10px;">★ ${place.rating}</div>` : ''}
-                        <button id="${infoButtonId}"
-                            style="
-                                display: inline-flex;
-                                align-items: center;
-                                gap: 6px;
-                                background: linear-gradient(135deg, #667eea, #764ba2);
-                                color: #fff;
-                                border: none;
-                                border-radius: 999px;
-                                padding: 6px 14px;
-                                font-size: 0.8rem;
-                                font-weight: 600;
-                                cursor: pointer;
-                                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
-                            ">
-                            ✨ Generate Assets
-                        </button>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button id="${infoButtonId}"
+                                style="
+                                    display: inline-flex;
+                                    align-items: center;
+                                    gap: 6px;
+                                    background: linear-gradient(135deg, #667eea, #764ba2);
+                                    color: #fff;
+                                    border: none;
+                                    border-radius: 999px;
+                                    padding: 6px 14px;
+                                    font-size: 0.8rem;
+                                    font-weight: 600;
+                                    cursor: pointer;
+                                    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
+                                    transition: transform 0.2s;
+                                ">
+                                ✨ Generate Assets
+                            </button>
+                            <button id="${infoButtonId}_add"
+                                style="
+                                    display: inline-flex;
+                                    align-items: center;
+                                    gap: 6px;
+                                    background: #fff;
+                                    color: #667eea;
+                                    border: 2px solid #667eea;
+                                    border-radius: 999px;
+                                    padding: 5px 14px;
+                                    font-size: 0.8rem;
+                                    font-weight: 600;
+                                    cursor: pointer;
+                                    transition: all 0.2s;
+                                ">
+                                ➕ Add to Campaign
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -729,9 +758,17 @@ function displayMarkersOnMap(places) {
             APP_STATE.infoWindows.forEach(iw => iw.close());
             infoWindow.open(APP_STATE.map, marker);
             google.maps.event.addListenerOnce(infoWindow, 'domready', () => {
-                const btn = document.getElementById(infoButtonId);
-                if (btn) {
-                    btn.addEventListener('click', () => generateAdData(place));
+                const generateBtn = document.getElementById(infoButtonId);
+                const addBtn = document.getElementById(`${infoButtonId}_add`);
+                
+                if (generateBtn) {
+                    generateBtn.addEventListener('click', () => generateAssetsForBusiness(place, generateBtn));
+                }
+                
+                if (addBtn) {
+                    addBtn.addEventListener('click', () => {
+                        alert(`"${place.displayName?.text || 'Business'}" will be added to campaign!\n\n(This is a placeholder - feature coming soon)`);
+                    });
                 }
             });
         });
@@ -1039,6 +1076,141 @@ function createResultCard(place) {
 // ========================================
 // GENERATE AD DATA
 // ========================================
+// ========================================
+// ASSET GENERATION
+// ========================================
+
+async function generateAssetsForBusiness(place, buttonElement) {
+    // Store original button state
+    const originalButtonHTML = buttonElement ? buttonElement.innerHTML : null;
+    const originalButtonDisabled = buttonElement ? buttonElement.disabled : null;
+    
+    try {
+        // Show loading state in button
+        if (buttonElement) {
+            buttonElement.disabled = true;
+            buttonElement.style.opacity = '0.7';
+            buttonElement.style.cursor = 'wait';
+            buttonElement.innerHTML = `
+                <svg style="display: inline-block; width: 14px; height: 14px; margin-right: 4px; animation: spin 1s linear infinite;" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="32" stroke-dashoffset="0" opacity="0.25"/>
+                    <path d="M 12 2 A 10 10 0 0 1 22 12" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/>
+                </svg>
+                Generating...
+            `;
+        }
+        
+        // Show loading state
+        console.log('[INFO] Generating assets for:', place.displayName?.text);
+        
+        // Prepare business data for AI pipeline
+        const businessData = {
+            gmb_id: place.id || `place_${Date.now()}`,
+            name: place.displayName?.text || 'Unknown Business',
+            address: place.formattedAddress || '',
+            phone: place.internationalPhoneNumber || '',
+            category: place.types?.[0] || 'business',
+            photos: place.photos ? place.photos.slice(0, 10).map(photo => 
+                `https://places.googleapis.com/v1/${photo.name}/media?key=${APP_STATE.apiKey}&maxHeightPx=400&maxWidthPx=400`
+            ) : []
+        };
+
+        // Call AI pipeline
+        const backendUrl = window.location.hostname.includes('github.dev') 
+            ? window.location.origin.replace(/-\d+\.app\.github\.dev/, '-4000.app.github.dev')
+            : 'http://localhost:4000';
+
+        const response = await fetch(`${backendUrl}/generate-content`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                campaign: {
+                    campaign_id: `quick_gen_${Date.now()}`,
+                    campaign_name: `Assets for ${businessData.name}`,
+                },
+                locations: [businessData],
+                screenLocation: APP_STATE.selectedLocation ? {
+                    address: APP_STATE.selectedLocation.address,
+                    coordinates: {
+                        lat: APP_STATE.selectedLocation.lat,
+                        lng: APP_STATE.selectedLocation.lng
+                    }
+                } : null
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('[ERROR] Backend response:', response.status, errorText);
+            throw new Error(`AI Pipeline error: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('[DEBUG] Backend response:', result);
+        
+        // Check if business was skipped
+        if (result.skipped && result.skipped.length > 0) {
+            const skippedBusiness = result.skipped[0];
+            let message = `Could not generate assets for ${skippedBusiness.business_name}\n\nReason: ${skippedBusiness.reason}`;
+            if (skippedBusiness.evaluated_images && skippedBusiness.evaluated_images.length > 0) {
+                message += `\n\nImage evaluations:\n${skippedBusiness.evaluated_images.map(img => 
+                    `• Image ${img.index}: ${img.suitability} - ${img.description}`
+                ).join('\n')}`;
+            }
+            alert(message);
+            return;
+        }
+        
+        // Display results in new tab
+        if (result.content && result.content.length > 0) {
+            const item = result.content[0];
+            console.log('[DEBUG] First content item:', item);
+            
+            const imageDescriptionsHTML = item.image_descriptions ? `
+                <details style="margin-top: 1.5em; padding: 1em; background: #f1f5f9; border-radius: 8px;">
+                    <summary style="cursor: pointer; font-weight: 600; color: #475569; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                        View Image Analysis (${item.image_descriptions.length} images)
+                    </summary>
+                    <div style="margin-top: 1em;">
+                        ${item.image_descriptions.map(img => `
+                            <div style="padding: 0.75em; margin-bottom: 0.5em; background: ${img.selected ? '#e0e7ff' : 'white'}; border-left: 3px solid ${img.selected ? '#4338ca' : '#cbd5e1'}; border-radius: 6px;">
+                                <strong style="color: ${img.selected ? '#4338ca' : '#475569'};">Image ${img.index}${img.selected ? ' ✓ SELECTED' : ''}</strong>
+                                <div style="color: ${img.suitability === 'suitable' ? '#16a34a' : '#dc2626'}; font-weight: 600; margin: 0.25em 0;">
+                                    ${img.suitability}
+                                </div>
+                                <em style="color: #64748b; font-size: 0.9rem;">${img.description}</em>
+                            </div>
+                        `).join('')}
+                    </div>
+                </details>
+            ` : '';
+            
+            const html = `<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><title>Generated Assets - ${item.business_name}</title><style>body{font-family:Arial,sans-serif;margin:2em;background:#f8fafc;} .container{max-width:800px;margin:0 auto;background:#fff;padding:2em;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.1);} h1{color:#667eea;margin-bottom:0.5em;} .field{margin-bottom:1.5em;padding:1em;background:#f8fafc;border-radius:8px;} .field strong{display:block;color:#334155;margin-bottom:0.5em;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.5px;} .field-content{font-size:1.1rem;color:#1e293b;} img{max-width:400px;border-radius:8px;margin-top:0.5em;box-shadow:0 2px 10px rgba(0,0,0,0.1);} .meta{color:#64748b;font-size:0.9rem;margin-top:2em;padding-top:1em;border-top:2px solid #e2e8f0;}</style></head><body><div class='container'><h1>Generated Assets for ${item.business_name}</h1><div class='field'><strong>Headline</strong><div class='field-content'>${item.headline}</div></div><div class='field'><strong>Subline 1</strong><div class='field-content'>${item.subline1}</div></div><div class='field'><strong>Subline 2</strong><div class='field-content'>${item.subline2}</div></div><div class='field'><strong>Call to Action</strong><div class='field-content'>${item.cta}</div></div><div class='field'><strong>Supporting Text</strong><div class='field-content'>${item.supporting}</div></div><div class='field'><strong>Header Image</strong><br>${item.header_image ? `<img src='${item.header_image}' alt='Header'>` : 'N/A'}</div><div class='field'><strong>Sub Image</strong><br>${item.sub_image ? `<img src='${item.sub_image}' alt='Sub'>` : 'N/A'}</div>${imageDescriptionsHTML}<div class='meta'>Generated at: ${item.generated_at}<br>Language: ${item.language || 'English'}</div></div></body></html>`;
+            
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+            
+            console.log('[SUCCESS] Assets generated and displayed');
+        } else {
+            console.error('[ERROR] No content in response:', result);
+            alert('No content was generated. Please try again.');
+        }
+
+    } catch (error) {
+        console.error('[ERROR] Asset generation failed:', error);
+        alert(`Failed to generate assets: ${error.message}`);
+    } finally {
+        // Restore button state
+        if (buttonElement && originalButtonHTML !== null) {
+            buttonElement.disabled = originalButtonDisabled;
+            buttonElement.style.opacity = '1';
+            buttonElement.style.cursor = 'pointer';
+            buttonElement.innerHTML = originalButtonHTML;
+        }
+    }
+}
+
 function generateAdData(place) {
     // Extract and structure the business data for ad generation
     const adData = {
@@ -2284,11 +2456,30 @@ async function generateCampaignAssets() {
         return;
     }
 
+    // Warn if too many businesses (AI processing is sequential and slow)
+    if (APP_STATE.campaign.selectedBusinesses.length > 5) {
+        const confirmed = confirm(
+            `You've selected ${APP_STATE.campaign.selectedBusinesses.length} businesses.\n\n` +
+            `Processing will take approximately ${Math.ceil(APP_STATE.campaign.selectedBusinesses.length * 15 / 60)} minutes because each business is analyzed individually with AI.\n\n` +
+            `Recommendation: Start with 2-5 businesses for faster results.\n\n` +
+            `Continue anyway?`
+        );
+        if (!confirmed) return;
+    }
+
     // Disable button and show loading state
     if (generateBtn) {
         generateBtn.disabled = true;
         generateBtn.dataset.processing = 'true';
-        generateBtn.textContent = '⏳ Creating Assets...';
+        generateBtn.style.opacity = '0.7';
+        generateBtn.style.cursor = 'wait';
+        generateBtn.innerHTML = `
+            <svg style="display: inline-block; width: 14px; height: 14px; margin-right: 4px; animation: spin 1s linear infinite; vertical-align: middle;" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="32" stroke-dashoffset="0" opacity="0.25"/>
+                <path d="M 12 2 A 10 10 0 0 1 22 12" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/>
+            </svg>
+            Creating Assets...
+        `;
     }
 
     hideError('campaignAssetsError');
@@ -2361,8 +2552,14 @@ async function generateCampaignAssets() {
 
         // Detect if running in Codespaces and use appropriate backend URL
         const backendUrl = window.location.hostname.includes('github.dev') 
-            ? window.location.origin.replace(/:\d+/, ':4000').replace('8080', '4000')
+            ? window.location.origin.replace(/-\d+\.app\.github\.dev/, '-4000.app.github.dev')
             : 'http://localhost:4000';
+        
+        console.log('[DEBUG] Backend URL:', backendUrl);
+        console.log('[DEBUG] Full URL:', `${backendUrl}/generate-content`);
+        console.log('[DEBUG] Sending payload with', aiPayload.locations.length, 'locations:');
+        console.log('[DEBUG] Locations:', aiPayload.locations.map(l => l.name));
+        console.log('[DEBUG] Full payload:', JSON.stringify(aiPayload, null, 2));
         
         // POST to AI pipeline service for content generation
         const response = await fetch(`${backendUrl}/generate-content`, {
@@ -2374,12 +2571,48 @@ async function generateCampaignAssets() {
             throw new Error(`AI Pipeline error: ${response.status} ${response.statusText}`);
         }
         const result = await response.json();
-        // result: { campaign, content }
+        // result: { campaign, content, skipped }
+        console.log('[DEBUG] Received response with', result.content?.length || 0, 'assets and', result.skipped?.length || 0, 'skipped');
+        console.log('[DEBUG] Content:', result.content?.map(c => c.business_name));
+        console.log('[DEBUG] Skipped:', result.skipped?.map(s => s.business_name));
+        
         // Show generated content in a new tab for review
-        const html = `<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><title>Generated Campaign Content</title><style>body{font-family:Arial,sans-serif;margin:2em;} .content{border:1px solid #ccc;margin-bottom:2em;padding:1em;} img{max-width:300px;display:block;margin-bottom:1em;} .field{margin-bottom:0.5em;}</style></head><body><h1>Campaign: ${result.campaign.campaign_name || result.campaign.name}</h1><h2>Generated Content</h2>${result.content.map(item => `<div class='content'><h3>${item.business_name}</h3><div class='field'><strong>Headline:</strong> ${item.headline}</div><div class='field'><strong>Subline 1:</strong> ${item.subline1}</div><div class='field'><strong>Subline 2:</strong> ${item.subline2}</div><div class='field'><strong>CTA:</strong> ${item.cta}</div><div class='field'><strong>Supporting:</strong> ${item.supporting}</div><div class='field'><strong>Header Image:</strong><br>${item.header_image ? `<img src='${item.header_image}' alt='Header'>` : 'N/A'}</div><div class='field'><strong>Sub Image:</strong><br>${item.sub_image ? `<img src='${item.sub_image}' alt='Sub'>` : 'N/A'}</div><div class='field'><strong>Generated At:</strong> ${item.generated_at}</div></div>`).join('')}</body></html>`;
+        const skippedSection = result.skipped && result.skipped.length > 0 ? `
+            <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 1.5em; margin-bottom: 2em; border-radius: 8px;">
+                <h2 style="color: #92400e; margin-top: 0;">⚠️ Skipped Businesses (${result.skipped.length})</h2>
+                ${result.skipped.map(skip => `
+                    <div style="margin-bottom: 1em; padding: 1em; background: white; border-radius: 8px;">
+                        <h3 style="margin-top: 0; color: #92400e;">${skip.business_name}</h3>
+                        <p style="color: #78350f; font-weight: 600;">Reason: ${skip.reason}</p>
+                        ${skip.image_count > 0 ? `<p style="color: #78350f;">Images evaluated: ${skip.image_count}</p>` : ''}
+                        ${skip.evaluated_images ? `
+                            <details style="margin-top: 0.5em;">
+                                <summary style="cursor: pointer; color: #92400e; font-weight: 600;">View Image Evaluations</summary>
+                                <div style="margin-top: 0.5em; padding-left: 1em;">
+                                    ${skip.evaluated_images.map(img => `
+                                        <div style="margin-bottom: 0.5em; padding: 0.5em; background: #fef3c7; border-radius: 4px;">
+                                            <strong>Image ${img.index}:</strong> ${img.suitability}<br>
+                                            <em style="color: #78350f;">${img.description}</em>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </details>
+                        ` : ''}
+                    </div>
+                `).join('')}
+            </div>
+        ` : '';
+        
+        const html = `<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><title>Generated Campaign Content</title><style>body{font-family:Arial,sans-serif;margin:2em;background:#f8fafc;} .content{border:1px solid #e2e8f0;margin-bottom:2em;padding:1.5em;background:white;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);} img{max-width:300px;display:block;margin:1em 0;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);} .field{margin-bottom:0.75em;} .field strong{color:#334155;} .image-descriptions{margin-top:1em;padding:1em;background:#f8fafc;border-radius:8px;} .image-descriptions h4{margin-top:0;color:#475569;} .img-desc{padding:0.5em;margin-bottom:0.5em;background:white;border-left:3px solid #667eea;border-radius:4px;} .img-desc.selected{background:#e0e7ff;border-left-color:#4338ca;} details{margin-top:1em;cursor:pointer;} summary{font-weight:600;color:#667eea;}</style></head><body><h1 style="color:#1e293b;">Campaign: ${result.campaign.campaign_name || result.campaign.name}</h1>${skippedSection}<h2 style="color:#334155;">Generated Content (${result.content.length} ${result.content.length === 1 ? 'Business' : 'Businesses'})</h2>${result.content.map(item => `<div class='content'><h3 style="color:#667eea;margin-top:0;">${item.business_name}</h3><div class='field'><strong>Headline:</strong> ${item.headline}</div><div class='field'><strong>Subline 1:</strong> ${item.subline1}</div><div class='field'><strong>Subline 2:</strong> ${item.subline2}</div><div class='field'><strong>CTA:</strong> ${item.cta}</div><div class='field'><strong>Supporting:</strong> ${item.supporting}</div><div class='field'><strong>Header Image:</strong><br>${item.header_image ? `<img src='${item.header_image}' alt='Header'>` : 'N/A'}</div><div class='field'><strong>Sub Image:</strong><br>${item.sub_image ? `<img src='${item.sub_image}' alt='Sub'>` : 'N/A'}</div>${item.image_descriptions ? `<details class="image-descriptions"><summary>View Image Analysis (${item.image_descriptions.length} images)</summary>${item.image_descriptions.map(img => `<div class="img-desc ${img.selected ? 'selected' : ''}"><strong>Image ${img.index}${img.selected ? ' ✓ SELECTED' : ''}:</strong> ${img.suitability}<br><em style="color:#64748b;">${img.description}</em></div>`).join('')}</details>` : ''}<div class='field' style="color:#64748b;font-size:0.9em;margin-top:1em;padding-top:1em;border-top:1px solid #e2e8f0;"><strong>Generated At:</strong> ${item.generated_at}${item.language ? `<br><strong>Language:</strong> ${item.language}` : ''}</div></div>`).join('')}</body></html>`;
         const blob = new Blob([html], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
+        const newTab = window.open(url, '_blank');
+        
+        if (!newTab || newTab.closed || typeof newTab.closed === 'undefined') {
+            console.warn('[WARN] Popup blocked - results saved. Click to view:');
+            console.log(url);
+            alert(`Results generated!\n\nYour browser blocked the popup. Check the console for a link to view results, or disable popup blocker for this site.`);
+        }
 
         showStatus('campaignAssetsStatus', `✓ Content generated and displayed in new tab! (${result.content.length} businesses)`);
 
@@ -2387,6 +2620,8 @@ async function generateCampaignAssets() {
             if (generateBtn) {
                 delete generateBtn.dataset.processing;
                 delete generateBtn.dataset.pendingLabel;
+                generateBtn.style.opacity = '1';
+                generateBtn.style.cursor = 'pointer';
             }
             renderSelectedBusinesses();
             hideStatus('campaignAssetsStatus');
@@ -2397,6 +2632,8 @@ async function generateCampaignAssets() {
         if (generateBtn) {
             delete generateBtn.dataset.processing;
             delete generateBtn.dataset.pendingLabel;
+            generateBtn.style.opacity = '1';
+            generateBtn.style.cursor = 'pointer';
         }
         renderSelectedBusinesses();
         hideStatus('campaignAssetsStatus');

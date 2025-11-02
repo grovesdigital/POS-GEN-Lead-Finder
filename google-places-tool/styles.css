@@ -68,6 +68,11 @@ body {
     50% { transform: translateY(-10px); }
 }
 
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 .setup-screen h1 {
     color: white;
     font-size: 2.5rem;

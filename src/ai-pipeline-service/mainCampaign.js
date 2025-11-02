@@ -17,40 +17,77 @@ export async function generateCampaignAssets({ campaign, locations, screenLocati
   log('info', `Campaign language: ${getLanguageName(language)} (${language})`);
   
   const assets = [];
+  const skipped = [];
+  
   for (const loc of locations) {
     log('info', `Processing location: ${loc.name}`);
-    // Caching image descriptions
-    let evaluated = await cacheGet(`imgdesc:${loc.gmb_id}`);
-    if (!evaluated) {
-      evaluated = await describeImages(loc.photos, loc);
-      await cacheSet(`imgdesc:${loc.gmb_id}`, evaluated);
-    }
-    const suitable = evaluated.filter(i => i.suitability === 'suitable');
-    if (!suitable.length) {
-      log('warn', `No suitable images for ${loc.name}`);
-      continue;
-    }
-    const chosen = await selectImages(suitable, manifest);
-    const text = await generateText(loc, manifest, language);
-    const asset = {
-      campaign_id: campaign.campaign_id,
-      campaign_name: campaign.campaign_name,
-      business_name: loc.name,
-      language: language,
-      ...text,
-      ...chosen,
-      generated_at: new Date().toISOString(),
-      versions: {
-        manifest: 'beta',
-        model: 'gpt-5-nano',
-        pipeline: 'v1.0',
-      },
-    };
-    if (validateAsset(asset)) {
-      assets.push(asset);
-    } else {
-      log('error', `Validation failed for asset: ${loc.name}`);
+    
+    try {
+      // Caching image descriptions
+      let evaluated = await cacheGet(`imgdesc:${loc.gmb_id}`);
+      if (!evaluated) {
+        evaluated = await describeImages(loc.photos, loc);
+        await cacheSet(`imgdesc:${loc.gmb_id}`, evaluated);
+      }
+      
+      const suitable = evaluated.filter(i => i.suitability === 'suitable');
+      if (!suitable.length) {
+        log('warn', `No suitable images for ${loc.name}`);
+        skipped.push({
+          business_name: loc.name,
+          reason: 'No suitable images found',
+          image_count: evaluated.length,
+          evaluated_images: evaluated.map(img => ({
+            index: img.index,
+            suitability: img.suitability,
+            description: img.description
+          }))
+        });
+        continue;
+      }
+      
+      const chosen = await selectImages(suitable, manifest);
+      const text = await generateText(loc, manifest, language);
+      const asset = {
+        campaign_id: campaign.campaign_id,
+        campaign_name: campaign.campaign_name,
+        business_name: loc.name,
+        language: language,
+        ...text,
+        ...chosen,
+        image_descriptions: evaluated.map(img => ({
+          index: img.index,
+          suitability: img.suitability,
+          description: img.description,
+          selected: img.index === chosen.header_image_index || img.index === chosen.sub_image_index
+        })),
+        generated_at: new Date().toISOString(),
+        versions: {
+          manifest: 'beta',
+          model: 'gpt-5-nano',
+          pipeline: 'v1.0',
+        },
+      };
+      
+      if (validateAsset(asset)) {
+        assets.push(asset);
+      } else {
+        log('error', `Validation failed for asset: ${loc.name}`);
+        skipped.push({
+          business_name: loc.name,
+          reason: 'Asset validation failed',
+          image_count: evaluated.length
+        });
+      }
+    } catch (error) {
+      log('error', `Error processing ${loc.name}: ${error.message}`);
+      skipped.push({
+        business_name: loc.name,
+        reason: `Error: ${error.message}`,
+        image_count: 0
+      });
     }
   }
-  return { campaign, assets };
+  
+  return { campaign, assets, skipped };
 }

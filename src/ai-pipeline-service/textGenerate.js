@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import { textPrompt } from '../aiPipeline/prompts.js';
+import { textPrompt } from './prompts.js';
 
 // Text LLM marketing copy generation using OpenAI API
 export async function generateText(location, manifest, language = 'en') {

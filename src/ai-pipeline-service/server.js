@@ -51,8 +51,12 @@ async function processQueue() {
       locations: job.locations,
       screenLocation: job.screenLocation 
     });
-    // Return as { campaign, content } for review, not assets
-    job.res.json({ campaign: result.campaign, content: result.assets });
+    // Return as { campaign, content, skipped } for review
+    job.res.json({ 
+      campaign: result.campaign, 
+      content: result.assets,
+      skipped: result.skipped || []
+    });
   } catch (err) {
     job.res.status(500).json({ error: err.message });
   }

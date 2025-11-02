@@ -1,0 +1,14 @@
+# .gitignore
+
+# Temporary/old pipeline files
+tmp-old-pipeline/
+
+# Environment variables
+.env
+
+# Dependencies
+node_modules/
+
+# Logs
+*.log
+/tmp/
