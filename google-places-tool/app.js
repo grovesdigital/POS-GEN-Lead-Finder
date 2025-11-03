@@ -16,6 +16,23 @@ function saveLLMApiUrl(url) {
 function loadLLMApiUrl() {
     return localStorage.getItem('llm_api_url') || '';
 }
+
+function resolveBackendUrl() {
+    const savedUrl = loadLLMApiUrl()?.trim();
+    if (savedUrl) return savedUrl;
+
+    const { hostname, origin } = window.location;
+
+    if (hostname.includes('app.github.dev')) {
+        return origin.replace(/-\d+\.app\.github\.dev/, '-4000.app.github.dev');
+    }
+
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        return 'http://localhost:4000';
+    }
+
+    return `http://${hostname}:4000`;
+}
 // ========================================
 // GLOBAL STATE
 // ========================================
@@ -1128,9 +1145,7 @@ async function generateAssetsForBusiness(place, buttonElement) {
         };
 
         // Call AI pipeline
-        const backendUrl = window.location.hostname.includes('github.dev') 
-            ? window.location.origin.replace(/-\d+\.app\.github\.dev/, '-4000.app.github.dev')
-            : 'http://localhost:4000';
+        const backendUrl = resolveBackendUrl();
 
         const response = await fetch(`${backendUrl}/generate-content`, {
             method: 'POST',
@@ -2562,10 +2577,7 @@ async function generateCampaignAssets() {
             } : null
         };
 
-        // Detect if running in Codespaces and use appropriate backend URL
-        const backendUrl = window.location.hostname.includes('github.dev') 
-            ? window.location.origin.replace(/-\d+\.app\.github\.dev/, '-4000.app.github.dev')
-            : 'http://localhost:4000';
+        const backendUrl = resolveBackendUrl();
         
         console.log('[DEBUG] Backend URL:', backendUrl);
         console.log('[DEBUG] Full URL:', `${backendUrl}/generate-content`);
@@ -2625,6 +2637,7 @@ async function generateCampaignAssets() {
 // ========================================
 function openSettingsModal() {
     document.getElementById('settingsModal').style.display = 'flex';
+    document.getElementById('settingsLLMApiUrl').value = loadLLMApiUrl();
 }
 
 function closeSettingsModal() {
