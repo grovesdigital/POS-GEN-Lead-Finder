@@ -24,11 +24,13 @@ Address: ${location.address}
 Phone: ${location.phone || 'N/A'}
 
 Fields required:
-- headline (max ${manifest.fields.headline.maxLength} chars)
-- subline1 (max ${manifest.fields.subline1.maxLength} chars)
-- subline2 (max ${manifest.fields.subline2.maxLength} chars)
-- cta (max ${manifest.fields.cta.maxLength} chars)
-- supporting (max ${manifest.fields.supporting.maxLength} chars)
+- headline (max ${manifest.fields.headline.maxLength} characters, including spaces)
+- subline1 (max ${manifest.fields.subline1.maxLength} characters, including spaces)
+- subline2 (max ${manifest.fields.subline2.maxLength} characters, including spaces)
+- cta (max ${manifest.fields.cta.maxLength} characters, including spaces)
+- supporting (max ${manifest.fields.supporting.maxLength} characters, including spaces)
+
+STRICTLY respect every character limit. If any field would exceed its limit, shorten it first. Count spaces as characters. Never exceed the limits.
 
 Respond ONLY with valid JSON.
 `;
