@@ -20,8 +20,9 @@ services:
     ports:
       - "4000:4000"
     restart: unless-stopped
-    env_file:
-      - ../.env
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:?OPENAI_API_KEY is required for the AI pipeline}
+      AI_PIPELINE_PORT: ${AI_PIPELINE_PORT:-4000}
 
 
 # To run with custom port, use:
