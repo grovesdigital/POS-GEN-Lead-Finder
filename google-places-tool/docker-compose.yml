@@ -7,8 +7,22 @@ services:
     ports:
       - "8080:80"
     restart: unless-stopped
+    depends_on:
+      - ai-pipeline-service
     labels:
       - "description=Internal Google Places Query Tool"
+
+  ai-pipeline-service:
+    build:
+      context: ..
+      dockerfile: src/ai-pipeline-service/Dockerfile
+    container_name: ai-pipeline-service
+    ports:
+      - "4000:4000"
+    restart: unless-stopped
+    env_file:
+      - ../.env
+
 
 # To run with custom port, use:
 # docker-compose up -d
